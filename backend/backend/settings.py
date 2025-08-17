@@ -22,6 +22,8 @@ load_dotenv(BASE_DIR / ".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
+ADMIN_REGISTRATION_KEY = os.getenv("ADMIN_REGISTRATION_KEY", "")
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -54,6 +56,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'auth_manager.apps.AuthManagerConfig',  
     'product_manager.apps.ProductManagerConfig',
+    'order_manager.apps.OrderManagerConfig',
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 MIDDLEWARE = [

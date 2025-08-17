@@ -24,9 +24,7 @@ const formatNumber = (value: number): string => new Intl.NumberFormat().format(v
 const Product: React.FC = () => {
 
     // States.
-    const [showDemandForecastModal, setShowDemandForecastModal] = useState<boolean>(false);
     const [selectedProductsForForecast, setSelectedProductsForForecast] = useState<string[]>([]);
-    const [globalDemandForecastEnabled, setGlobalDemandForecastEnabled] = useState<boolean>(false);
     const [products, setProducts] = useState<any>([]);
     const [showAddModal, setShowAddModal] = useState<boolean>(false);
     const [showEditModal, setShowEditModal] = useState<boolean>(false);
@@ -36,6 +34,15 @@ const Product: React.FC = () => {
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [notification, setNotification] = useState<Notification | null>(null);
     const [userName] = useState<any>(localStorageManager.getName());
+    const [showOrderModal, setShowOrderModal] = useState(false);
+const [orderFormData, setOrderFormData] = useState({
+    customer_name: '',
+    customer_email: '',
+    customer_phone: '',
+    customer_address: '',
+    notes: ''
+});
+const [orderErrors, setOrderErrors] = useState({});
 
     const [formData, setFormData] = useState<FormData>({
         name: '',
@@ -67,7 +74,6 @@ const Product: React.FC = () => {
         search: debouncedSearchTerm
     });
 
-    const [demandForecastEnabled, setDemandForecastEnabled] = useState<boolean>(false);
     const createProductMutation = useCreateProduct();
     const updateProductMutation = useUpdateProduct();
     const deleteProductMutation = useDeleteProduct();
@@ -85,7 +91,112 @@ const Product: React.FC = () => {
         setNotification({ message, type });
         setTimeout(() => setNotification(null), 3000);
     };
+    const handlePlaceOrder = () => {
+        if (selectedProductsForForecast.length === 0) {
+            showNotification('Please select at least one product to place an order', 'error');
+            return;
+        }
+        setShowOrderModal(true);
+    };
+    
+    const validateOrderForm = () => {
+        const newErrors = {};
+        
+        
+        
+        setOrderErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+    
+    const handleCreateOrderFromProducts = async () => {
+        if (!validateOrderForm()) return;
+        
+        try {
+            const selectedProducts = products.filter((product: Product) => 
+                selectedProductsForForecast.includes(product.id)
+            );
+            
+            const orderData = {
+                customer_name: orderFormData.customer_name,
+                customer_email: orderFormData.customer_email,
+                customer_phone: orderFormData.customer_phone,
+                customer_address: orderFormData.customer_address,
+                notes: orderFormData.notes,
+                items: selectedProducts.map((product: Product) => ({
+                    product_id: product.id,
+                    quantity: 1 // Default quantity, user can modify later
+                }))
+            };
+            
+            // Here you would call your order creation API
+            console.log('Creating order with data:', orderData);
+            
+            // For now, just show success and navigate
+            setShowOrderModal(false);
+            setOrderFormData({
+                customer_name: '',
+                customer_email: '',
+                customer_phone: '',
+                customer_address: '',
+                notes: ''
+            });
+            setSelectedProductsForForecast([]);
+            showNotification('Order created successfully!');
+            
+            // Navigate to orders page with the new order data
+            navigate('/order', { state: { newOrderData: orderData } });
+            
+        } catch (error) {
+            showNotification('Failed to create order', 'error');
+        }
+    };
+    
+    const resetOrderForm = () => {
+        setOrderFormData({
+            customer_name: '',
+            customer_email: '',
+            customer_phone: '',
+            customer_address: '',
+            notes: ''
+        });
+        setOrderErrors({});
+    };
+    
+    const renderOrderFormField = (
+        label: any,
+        name: any,
+        type = 'text',
+        placeholder = '',
+        required = false
+    ) => (
+        <div>
+            <label className="block text-sm font-medium mb-2">
+                {label} {required && <span className="text-red-400">*</span>}
+            </label>
+            {/* {type === 'textarea' ? (
+                <textarea
+                    value={orderFormData[name]}
+                    onChange={(e) => setOrderFormData(prev => ({ ...prev, [name]: e.target.value }))}
+                    placeholder={placeholder}
+                    rows={3}
+                    className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border focus:outline-none transition-colors resize-none ${
+                        orderErrors[name] ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-red-400'
+                    }`}
+                />
+            ) : (
+                <input
+                    type={type}
+                    value={orderFormData[name]}
+                    onChange={(e) => setOrderFormData(prev => ({ ...prev, [name]: e.target.value }))}
+                    placeholder={placeholder}
+                    className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border focus:outline-none transition-colors ${
+                        orderErrors[name] ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-red-400'
+                    }`}
+                />
+            )} */}
 
+        </div>
+    );
     const validateForm = (): boolean => {
         const newErrors: Partial<FormData> = {};
 
@@ -123,7 +234,6 @@ const Product: React.FC = () => {
             optimized_price: ''
         });
         setErrors({});
-        setDemandForecastEnabled(false);
     };
 
 
@@ -142,25 +252,11 @@ const Product: React.FC = () => {
             };
 
             // Calculate demand forecast and optimized price if enabled
-            if (demandForecastEnabled) {
-                const calculations = calculateDemandForecastAndOptimizedPrice(
-                    parseInt(formData.stock_available) || 0,
-                    parseInt(formData.units_sold) || 0,
-                    parseFloat(formData.selling_price)
-                );
-
-                productData.demand_forecast = calculations.demandForecast;
-                productData.optimized_price = calculations.optimizedPrice.toFixed(2);
-            } else {
-                productData.demand_forecast = formData.demand_forecast ? parseInt(formData.demand_forecast) : null;
-                productData.optimized_price = null;
-            }
-
+            
             await createProductMutation.mutateAsync(productData);
 
             setShowAddModal(false);
             resetForm();
-            setDemandForecastEnabled(false);
             showNotification('Product added successfully!');
         } catch (error) {
             showNotification('Failed to add product', 'error');
@@ -176,14 +272,7 @@ const Product: React.FC = () => {
     };
 
 
-    const handleDemandForecastClick = () => {
-        if (selectedProductsForForecast.length === 0) {
-            showNotification('Please select at least one product for demand forecast', 'error');
-            return;
-        }
-        setShowDemandForecastModal(true);
-    };
-
+    
 
     const handleEditProduct = async () => {
         if (!validateForm() || !selectedProduct) return;
@@ -200,27 +289,13 @@ const Product: React.FC = () => {
                 units_sold: parseInt(formData.units_sold) || 0,
             };
 
-            // Calculate demand forecast and optimized price if enabled.
-            if (demandForecastEnabled) {
-                const calculations = calculateDemandForecastAndOptimizedPrice(
-                    parseInt(formData.stock_available) || 0,
-                    parseInt(formData.units_sold) || 0,
-                    parseFloat(formData.selling_price)
-                );
 
-                productData.demand_forecast = calculations.demandForecast;
-                productData.optimized_price = calculations.optimizedPrice.toFixed(2);
-            } else {
-                productData.demand_forecast = formData.demand_forecast ? parseInt(formData.demand_forecast) : null;
-                productData.optimized_price = null;
-            }
 
             await updateProductMutation.mutateAsync(productData);
 
             setShowEditModal(false);
             resetForm();
             setSelectedProduct(null);
-            setDemandForecastEnabled(false);
             showNotification('Product updated successfully!');
         } catch (error) {
             showNotification('Failed to update product', 'error');
@@ -256,38 +331,12 @@ const Product: React.FC = () => {
             demand_forecast: product.demand_forecast?.toString() || '',
             optimized_price: product.optimized_price?.toString() || ''
         });
-        setDemandForecastEnabled(!!product.demand_forecast && !!product.optimized_price);
         setShowEditModal(true);
     };
 
 
-    const calculateProfitMargin = (costPrice: string, sellingPrice: string): number => {
-        const cost = parseFloat(costPrice);
-        const selling = parseFloat(sellingPrice);
-        if (cost <= 0) return 0;
-        return ((selling - cost) / cost) * 100;
-    };
-
-    const calculateDemandForecastAndOptimizedPrice = (
-        stockAvailable: number,
-        unitsSold: number,
-        sellingPrice: number
-    ) => {
-        // Simple demand forecast algorithm
-        const demandForecast = Math.ceil(unitsSold * 1.2 + stockAvailable * 0.1);
-
-        // Simple price optimization algorithm
-        const demandRatio = unitsSold / (stockAvailable + 1);
-        const optimizedPrice = demandRatio > 0.8
-            ? sellingPrice * 1.05
-            : sellingPrice * 0.95;
-
-        return {
-            demandForecast,
-            optimizedPrice: Math.max(optimizedPrice, sellingPrice * 0.8)
-        };
-    };
-
+    
+    
     const renderFormField = (
         label: string,
         name: keyof FormData,
@@ -304,7 +353,7 @@ const Product: React.FC = () => {
                 <select
                     value={formData[name]}
                     onChange={(e) => setFormData(prev => ({ ...prev, [name]: e.target.value }))}
-                    className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border focus:outline-none transition-colors ${errors[name] ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-teal-400'
+                    className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border focus:outline-none transition-colors ${errors[name] ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-red-400'
                         }`}
                 >
                     {options.map(option => (
@@ -317,7 +366,7 @@ const Product: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, [name]: e.target.value }))}
                     placeholder={placeholder}
                     rows={3}
-                    className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border focus:outline-none transition-colors resize-none ${errors[name] ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-teal-400'
+                    className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border focus:outline-none transition-colors resize-none ${errors[name] ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-red-400'
                         }`}
                 />
             ) : (
@@ -328,7 +377,7 @@ const Product: React.FC = () => {
                     placeholder={placeholder}
                     step={type === 'number' ? '0.01' : undefined}
                     min={type === 'number' ? '0' : undefined}
-                    className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border focus:outline-none transition-colors ${errors[name] ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-teal-400'
+                    className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border focus:outline-none transition-colors ${errors[name] ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-red-400'
                         }`}
                 />
             )}
@@ -358,7 +407,7 @@ const Product: React.FC = () => {
             <div className="bg-gray-800 px-6 py-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                        <h1 className="text-2xl font-bold text-teal-400">Price Optimization Tool</h1>
+                        <h1 className="text-2xl font-bold text-red-400">Spaising's store</h1>
                     </div>
                     <div className="flex items-center space-x-4">
                         <span className="text-gray-300">Welcome, {userName}</span>
@@ -373,8 +422,8 @@ const Product: React.FC = () => {
             <div className="bg-black px-6 py-3 border-t border-gray-700">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center space-x-4">
-                        <button className="text-gray-400 hover:text-white transition-colors" onClick={() => navigate('/price-optimized')}>← Back</button>
-                        <h2 className="text-xl font-semibold">Create and Manage Product</h2>
+                        <button className="text-gray-400 hover:text-white transition-colors" onClick={() => navigate('/order')}>← Orders</button>
+                        <h2 className="text-xl font-semibold">Product Catalog</h2>
                     </div>
 
                     <div className="flex items-center space-x-4">
@@ -387,7 +436,7 @@ const Product: React.FC = () => {
                                 placeholder="Search products..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="bg-black text-white pl-10 pr-4 py-2 rounded-md border border-teal-600 focus:outline-none transition-colors w-64"
+                                className="bg-black text-white pl-10 pr-4 py-2 rounded-md border border-red-600 focus:outline-none transition-colors w-64"
                             />
                         </div>
 
@@ -395,7 +444,7 @@ const Product: React.FC = () => {
                         <select
                             value={selectedCategory}
                             onChange={(e) => setSelectedCategory(e.target.value)}
-                            className="bg-black text-white px-3 py-2 rounded-md border  border-teal-600 focus:outline-none transition-colors"
+                            className="bg-black text-white px-3 py-2 rounded-md border  border-red-600 focus:outline-none transition-colors"
                         >
                             {PRODUCT_CATEGORIES.map(cat => (
                                 <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -403,7 +452,7 @@ const Product: React.FC = () => {
                         </select>
 
                         {/* Filter Button */}
-                        <button className="border border-teal-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors">
+                        <button className="border border-red-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors">
                             <span>∀</span>
                             <span>Filter</span>
                         </button>
@@ -413,7 +462,7 @@ const Product: React.FC = () => {
                             onClick={() => {
                                 setShowAddModal(true);
                             }}
-                            className="bg-teal-400 hover:bg-teal-500 text-black px-4 py-2 rounded-md flex items-center space-x-2 transition-colors font-medium"
+                            className="bg-red-400 hover:bg-red-500 text-black px-4 py-2 rounded-md flex items-center space-x-2 transition-colors font-medium"
                         >
                             <Plus className="w-4 h-4" />
                             <span>Add New Products</span>
@@ -426,7 +475,7 @@ const Product: React.FC = () => {
             <div className="p-6">
                 {loading ? (
                     <div className="flex justify-center items-center h-64">
-                        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-teal-400"></div>
+                        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-400"></div>
                     </div>
                 ) : (
                     <div className="bg-gray-800 rounded-lg overflow-hidden shadow-xl">
@@ -445,7 +494,7 @@ const Product: React.FC = () => {
                                                     }
                                                 }}
                                                 checked={selectedProductsForForecast.length === products.length && products.length > 0}
-                                                className="rounded bg-gray-700 text-white border border-gray-600 checked:bg-teal-400 checked:border-teal-500"
+                                                className="rounded bg-gray-700 text-white border border-gray-600 checked:bg-red-400 checked:border-red-500"
                                             />
                                         </th>
                                         <th className="text-left p-4 font-medium">Product Name</th>
@@ -455,7 +504,6 @@ const Product: React.FC = () => {
                                         <th className="text-left p-4 font-medium">Description</th>
                                         <th className="text-left p-4 font-medium">Stock</th>
                                         <th className="text-left p-4 font-medium">Units Sold</th>
-                                        <th className="text-left p-4 font-medium">Calculated Demand Forecast</th>
                                         <th className="text-left p-4 font-medium">Actions</th>
                                     </tr>
                                 </thead>
@@ -476,7 +524,7 @@ const Product: React.FC = () => {
                                                         type="checkbox"
                                                         checked={selectedProductsForForecast.includes(product.id)}
                                                         onChange={() => handleProductSelection(product.id)}
-                                                        className="rounded bg-gray-700 text-white border border-gray-600 checked:bg-teal-400"
+                                                        className="rounded bg-gray-700 text-white border border-gray-600 checked:bg-red-400"
                                                     />
                                                 </td>
                                                 <td className="p-4 text-gray-800 border-r border-gray-800 font-medium">{product.name}</td>
@@ -491,9 +539,7 @@ const Product: React.FC = () => {
                                                 </td>
                                                 <td className="p-4 text-gray-800 border-r border-gray-800">{formatNumber(product.stock_available)}</td>
                                                 <td className="p-4 text-gray-800 border-r border-gray-800">{formatNumber(product.units_sold)}</td>
-                                                <td className="p-4 text-green-800 border-r border-gray-800">
-                                                    {product.demand_forecast ? formatCurrency(product.demand_forecast) : '-'}
-                                                </td>
+                                               
                                                 <td className="p-4">
                                                     <div className="flex space-x-2">
                                                         <button
@@ -529,18 +575,17 @@ const Product: React.FC = () => {
                         {products !== undefined && (
                             <div className="bg-black px-6 py-3 text-sm text-gray-300 flex justify-end">
                                 <div className="flex items-center space-x-3 px-3 py-2 rounded-md ">
-                                    {/* Demand Forecast Button */}
                                     <button
                                         onClick={() => { }}
-                                        className="border border-teal-500 bg-black hover:bg-teal-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors font-medium"
+                                        className="border border-red-500 bg-black hover:bg-red-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors font-medium"
                                     >
                                         <span>Cancel</span>
                                     </button>
                                     <button
                                         onClick={() => { }}
-                                        className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors font-medium"
+                                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors font-medium"
                                     >
-                                        <span>Save</span>
+                                        <span>Place Order</span>
                                     </button>
                                 </div>
                             </div>
@@ -595,7 +640,7 @@ const Product: React.FC = () => {
                             <button
                                 onClick={handleAddProduct}
                                 disabled={createProductMutation.isPending}
-                                className="px-6 py-2 bg-teal-500 hover:bg-teal-600 disabled:bg-teal-700 disabled:cursor-not-allowed text-white rounded-md transition-colors"
+                                className="px-6 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-700 disabled:cursor-not-allowed text-white rounded-md transition-colors"
                             >
                                 {createProductMutation.isPending ? 'Adding...' : 'Add Product'}
                             </button>
@@ -629,7 +674,6 @@ const Product: React.FC = () => {
                             {renderFormField('Selling Price', 'selling_price', 'number', '0.00', true)}
                             {renderFormField('Stock Available', 'stock_available', 'number', '0')}
                             {renderFormField('Units Sold', 'units_sold', 'number', '0')}
-                            {renderFormField('Demand Forecast', 'demand_forecast', 'number', '0')}
                         </div>
 
                         <div className="mt-6">
@@ -650,7 +694,7 @@ const Product: React.FC = () => {
                             <button
                                 onClick={handleEditProduct}
                                 disabled={updateProductMutation.isPending}
-                                className="px-6 py-2 bg-teal-500 hover:bg-teal-600 disabled:bg-teal-700 disabled:cursor-not-allowed text-white rounded-md transition-colors"
+                                className="px-6 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-700 disabled:cursor-not-allowed text-white rounded-md transition-colors"
                             >
                                 {updateProductMutation.isPending ? 'Updating...' : 'Update Product'}
                             </button>
@@ -715,19 +759,8 @@ const Product: React.FC = () => {
                                     <p className="text-white">{formatNumber(selectedProduct.units_sold)}</p>
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-1">Calculated Demand Forecast</label>
-                                {selectedProduct.demand_forecast ? formatCurrency(selectedProduct.demand_forecast) : '-'}
-                            </div>
+                            
 
-
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-1">Profit Margin</label>
-                                <p className="text-purple-400 font-semibold">
-                                    {calculateProfitMargin(selectedProduct.cost_price, selectedProduct.selling_price).toFixed(1)}%
-                                </p>
-                            </div>
 
                             {selectedProduct.description && (
                                 <div>

@@ -7,8 +7,10 @@ const Register = () => {
   // States
   const [username, setUsername] = useState<string>('');
   const [email, setEmail] = useState<string>('');
+  const [adminKey, setAdminKey] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
@@ -29,12 +31,16 @@ const Register = () => {
   useEffect(() => {
     if (isSuccessRegisterRequest && registerRequestResponse) {
       setRegistrationComplete(true);
-      toast.success(registerRequestResponse.meta?.message || 'Registration completed. Please check your email to verify your account.');
+      toast.success(registerRequestResponse.meta?.message || 'Registration completed. Please login.');
     }
     if (isErrorRegisterRequest && registerErrorResponse) {
-      const errorMessage = registerErrorResponse?.data?.meta?.message || 'Registration failed';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      const errorMessage =
+      registerErrorResponse?.meta.status_code === 403
+        ? "Invalid admin key. You are not authorized to register users."
+        : registerErrorResponse?.data?.meta?.message || "Registration failed";
+
+    setError(errorMessage);
+    toast.error(errorMessage);
     }
   }, [isSuccessRegisterRequest, isErrorRegisterRequest, registerRequestResponse, registerErrorResponse]);
 
@@ -67,12 +73,14 @@ const Register = () => {
     sendRegisterRequest({
       username: username.trim(),
       email: email.trim(),
+      is_admin: isAdmin,
+      admin_key: adminKey.trim(),
       password
     });
   };
 
   const handleGoToLogin = () => {
-    navigate('/');
+    navigate('/login');
   };
 
   const handleTryAgain = () => {
@@ -115,10 +123,7 @@ const Register = () => {
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Registration Successful!</h2>
-            <p className="text-gray-600 mb-6">
-              We've sent a verification email to <strong>{email}</strong>. 
-              Please click the verification link in the email to activate your account.
-            </p>
+            
             <div className="space-y-3">
               <button
                 onClick={handleGoToLogin}
@@ -142,8 +147,8 @@ const Register = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 bg-white rounded shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Price Optimization Tool</h1>
-        <p className="text-gray-600 text-center mb-6">Email Verification based Registration</p>
+        <h1 className="text-2xl font-bold mb-6 text-center">Spaising's Store</h1>
+        <p className="text-gray-600 text-center mb-6">Role based access control user Registration</p>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
@@ -158,7 +163,15 @@ const Register = () => {
               required
             />
           </div>
-
+          <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={isAdmin}
+            onChange={(e) => setIsAdmin(e.target.checked)}
+            disabled={isLoadingRegisterRequest}
+          />
+          <label className="text-gray-700 text-sm">Register as Admin</label>
+        </div>
           <div>
             <label className="block text-gray-700 text-sm font-medium mb-1">Email</label>
             <input
@@ -171,6 +184,20 @@ const Register = () => {
               required
             />
           </div>
+
+          <div>
+              <label className="block text-gray-700 text-sm font-medium mb-1">Admin Key</label>
+              <input
+                type="password"
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter admin key"
+                value={adminKey}
+                onChange={(e) => setAdminKey(e.target.value)}
+                disabled={isLoadingRegisterRequest}
+                required
+              />
+            </div>
+
 
           <div>
             <label className="block text-gray-700 text-sm font-medium mb-1">Password</label>

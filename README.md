@@ -1,6 +1,7 @@
 # Spaising's store
 
 A full stack web solution to
+- Register and Login users with access control
 - CRUD operations for the product items is supported. 
 - Includes a SMTP SendGrid email verification after the order is placed.
 - order table management
@@ -78,6 +79,16 @@ pip install -r requirements.txt
 - Run sever
 ```bash
 python manage.py runserver
+```v
+
+- In order to register user, make sure to set:
+```bash
+     ADMIN_REGISTRATION_KEY
 ```
 
+- Move to below url to access admin panel
+```bash
+127.0.0.1:8000/admin
+```
 
+## Screenshots

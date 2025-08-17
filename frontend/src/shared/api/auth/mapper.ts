@@ -4,10 +4,23 @@ import type { LoginResponse, VerifyOtpResponse } from "./types";
 
 export const loginResponseMapper = (response: ApiResponse): LoginResponse => {
   const data = response.data || {};
+  if (data.access) {
+    localStorageManager.setToken(data.access);
+  }
+
+  if (data.refresh) {
+    localStorageManager.setRefreshToken(data.refresh);
+  }
+
+  if (data.name) {
+    localStorageManager.setName(data.name);
+  }
+
+
   return {
-    otp_secret: data.otp_secret || '',
-    otp: data.otp || '',
-    message: data.message || 'Enter OTP to continue'
+    access: data.access || '',
+    refresh: data.refresh || '',
+    name: data.name || '',
   };
 };
 

@@ -2,14 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
-import { useLoginRequest, useVerifyOtpRequest } from '../../../shared/api/auth/auth-api';
+import { useLoginRequest } from '../../../shared/api/auth/auth-api';
 
 const Login = () => {
   // States.
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [otp, setOtp] = useState<string>('');
-  const [otpRequired, setOtpRequired] = useState<boolean>(false);
   const [error, setError] = useState<string>();
 
   // Router.
@@ -25,50 +23,28 @@ const Login = () => {
     error: loginErrorResponse,
   } = useLoginRequest();
 
-  const {
-    mutate: verifyLoginOtpRequest,
-    isSuccess: isSuccessVerifyOtpRequest,
-    isPending: isLoadingVerifyRequest,
-    isError: isErrorVerifyOtp,
-    error: errorVerifyOtp,
-  } = useVerifyOtpRequest();
 
   // useEffects.
   useEffect(() => {
     if (isSuccessLoginRequest && loginRequestResponse) {
-      setOtpRequired(true);
+      navigate('/product');
+      toast.success('Login Successful')
     }
     if (isErrorLoginRequest && loginErrorResponse) {
       toast.error(loginErrorResponse.meta?.message);
     }
   }, [isSuccessLoginRequest, isErrorLoginRequest])
 
-  useEffect(() => {
-    if (isSuccessVerifyOtpRequest) {
-      navigate('/product');
-      toast.success('Login Successful')
-    }
-    if (isErrorVerifyOtp && errorVerifyOtp) {
-      toast.error(errorVerifyOtp.meta.message);
-    }
-  }, [isSuccessVerifyOtpRequest, isErrorVerifyOtp])
 
   //Handlers.
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    if (otpRequired) {
-      verifyLoginOtpRequest({
-        username,
-        otp
-      });
-    } else {
+    setError('');    
       sendLoginRequest({
         username,
         password
       });
-    }
+    
   };
 
   return (
@@ -86,7 +62,6 @@ const Login = () => {
                 placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                disabled={otpRequired}
                 required
               />
             </div>
@@ -98,24 +73,10 @@ const Login = () => {
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={otpRequired}
                 required
               />
             </div>
 
-            {otpRequired && (  
-                  <div>
-                    <label className="block text-gray-700">OTP Code</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter the code from your app"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      required
-                    />
-                  </div>
-            )}
             {error && (
               <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
                 {error}
@@ -124,11 +85,9 @@ const Login = () => {
             <button
               type="submit"
               className="w-full py-2 px-4 bg-blue-600 cursor-pointer text-white rounded hover:bg-blue-700 transition disabled:bg-blue-400 disabled:opacity-75 disabled:cursor-not-allowed"
-              disabled={isLoadingLoginRequest || isLoadingVerifyRequest || (otpRequired && !otp.trim())}>
-              {isLoadingVerifyRequest
+              disabled={isLoadingLoginRequest}>
+              {isLoadingLoginRequest
                 ? 'Processing...'
-                : otpRequired
-                  ? 'Verify OTP'
                   : 'Log In'}
             </button>
             <div className="text-center mt-4">

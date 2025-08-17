@@ -15,13 +15,15 @@ export type LoginPayload = {
 }
 
 export type LoginResponse = {
-    otp_secret: string;
-    otp: string;
-    message: string;
+    name: string;
+    access: string;
+    refresh: string;
 }
 
 export type RegisterPayload = {
     username: string;
     email: string;
+    is_admin: boolean,
+    admin_key: string,
     password: string;
 }

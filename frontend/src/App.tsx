@@ -7,7 +7,7 @@ import { AuthProvider } from "./providers";
 import Register from "./components/pages/Auth/Register";
 import { AuthGuard } from "./components/guards";
 import Product from "./components/pages/dashboard/Product";
-import PriceOptimized from "./components/pages/dashboard/Price-Optimized";
+import Order from "./components/pages/dashboard/Order";
 import Login from "./components/pages/Auth/Login";
 
 const App: React.FC = () => {
@@ -26,7 +26,7 @@ const App: React.FC = () => {
             {/* Protected routes */}
             <Route element={<AuthGuard />}>
               <Route path="/product" element={<Product />} />
-              <Route path="/price-optimized" element={<PriceOptimized />} />
+              <Route path="/order" element={<Order />} />
             </Route>
           </Routes>
         </Router>
