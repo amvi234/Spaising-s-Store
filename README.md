@@ -3,6 +3,8 @@
 A full stack web solution to
 - CRUD operations for the product items is supported. 
 - Includes a SMTP SendGrid email verification after the order is placed.
+- order table management
+- role-based access control
 
 ## 🛠️ Tech Stack
 
@@ -25,6 +27,16 @@ This project uses the following technologies:
 - Node.js 20+
 
 ## Setup to run this project:-
+
+### Environment Configuration
+
+- The default environment variables are defined in `.env.template`. For enhanced security:
+  1. Copy `.env.template` to `.env`:
+     ```bash
+     cp .env.template .env
+     ```
+  2. Update sensitive information like API keys, secrets, and database credentials in `.env`.
+
 
 ## Frontend
 
@@ -67,8 +79,5 @@ pip install -r requirements.txt
 ```bash
 python manage.py runserver
 ```
-
-
-## Screenshots
 
 
