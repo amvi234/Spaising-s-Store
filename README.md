@@ -79,7 +79,7 @@ pip install -r requirements.txt
 - Run sever
 ```bash
 python manage.py runserver
-```v
+```
 
 - In order to register user, make sure to set:
 ```bash
@@ -92,3 +92,26 @@ python manage.py runserver
 ```
 
 ## Screenshots
+
+
+
+
+<img width="1920" height="1080" alt="Screenshot from 2025-08-17 08-42-49" src="https://github.com/user-attachments/assets/bcb095ee-dc8a-42b7-8519-496df77c9644" />
+
+<img width="1920" height="1080" alt="Screenshot from 2025-08-17 08-42-55" src="https://github.com/user-attachments/assets/e21dc2ed-c9e2-46ad-9864-d73e67e5a2d8" />
+
+<img width="1920" height="1080" alt="Screenshot from 2025-08-17 08-41-21" src="https://github.com/user-attachments/assets/bc2ab69e-6c2d-4a84-b27c-8caf3c84daa8" />
+
+<img width="1920" height="1080" alt="Screenshot from 2025-08-17 08-48-17" src="https://github.com/user-attachments/assets/17804e6f-09e3-4f48-808f-612ea912710a" />
+
+
+<img width="1920" height="1080" alt="Screenshot from 2025-08-17 08-48-12" src="https://github.com/user-attachments/assets/8044e2ea-9bba-4ead-8416-c2d84a9b5007" />
+
+
+
+
+<img width="1920" height="1080" alt="Screenshot from 2025-08-17 08-48-25" src="https://github.com/user-attachments/assets/e90f37d4-ba60-4fb4-8c4e-09d9960f6f7d" />
+
+<img width="1920" height="1080" alt="Screenshot from 2025-08-17 08-41-16" src="https://github.com/user-attachments/assets/e91101ce-0150-45a6-95e2-64918a1c71a6" />
+
+<img width="1920" height="1080" alt="Screenshot from 2025-08-17 08-41-47" src="https://github.com/user-attachments/assets/d62857d9-2627-4c80-badd-b7687cd3c7f6" />
